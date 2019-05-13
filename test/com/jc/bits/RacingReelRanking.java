@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Optional;
 
 public class RacingReelRanking {
 
@@ -23,32 +24,39 @@ public class RacingReelRanking {
 		machines.add(new Machine(8, 1, 13));
 		machines.add(new Machine(9, 1, 13));
 		machines.add(new Machine(10, 1, 3));
-
-		new Ranker().ranking(machines).forEach(System.out::println);
+		ranking(machines);
 	}
 
-	static class Ranker {
-		private int nextRank = 1;
-		private int numberOfSameRank = 0;
+	public static List<MachineRank> ranking(List<Machine> machines) {
+		return machines.stream().sorted(Machine.WINLOSE_DESC_ID_ASC).collect(groupingBy(Machine::winlose, LinkedHashMap::new, toList())).entrySet().stream().collect(
+			ArrayList::new, 
+			(accumulated, element) -> {
+				int rank = getLast(accumulated).map(MachineRank::nextRank).orElse(1);
+				accumulated.addAll(element.getValue().stream().map(m -> {
+					return new MachineRank(rank, m, element.getValue().size());
+				}).peek(System.out::println).collect(toList()));
+			}, 
+			ArrayList::addAll
+		);
+	}
 
-		public List<MachineRank> ranking(List<Machine> machines) {
-			return machines.stream().sorted(Machine.WINLOSE_DESC_ID_ASC).collect(groupingBy(Machine::winlose, LinkedHashMap::new, toList())).entrySet().stream().map(keyVaule -> {
-				nextRank += numberOfSameRank;
-				numberOfSameRank = keyVaule.getValue().size();
-				return keyVaule.getValue().stream().map(m -> {
-					return new MachineRank(nextRank, m);
-				}).collect(toList());
-			}).flatMap(List::stream).collect(toList());
-		}
+	public static Optional<MachineRank> getLast(ArrayList<MachineRank> accumulated) {
+		return accumulated.stream().reduce((first, second) -> second);
 	}
 
 	static class MachineRank {
-		private int rank = 0;
+		private int rank;
 		private Machine machine;
+		private int numberOfSameRank;
 
-		public MachineRank(int rank, Machine machine) {
+		public MachineRank(int rank, Machine machine, int numberOfSameRank) {
 			this.rank = rank;
 			this.machine = machine;
+			this.numberOfSameRank = numberOfSameRank;
+		}
+
+		public int nextRank() {
+			return rank + numberOfSameRank;
 		}
 
 		@Override

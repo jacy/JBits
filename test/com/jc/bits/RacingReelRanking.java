@@ -1,10 +1,12 @@
 package com.jc.bits;
 
 import static java.util.Comparator.comparing;
+import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 public class RacingReelRanking {
@@ -26,24 +28,17 @@ public class RacingReelRanking {
 	}
 
 	static class Ranker {
-		private Integer winlose = Integer.MAX_VALUE;
-		private int rank = 0;
+		private int nextRank = 1;
 		private int numberOfSameRank = 0;
 
 		public List<MachineRank> ranking(List<Machine> machines) {
-			return machines.stream().sorted(Machine.WINLOSE_DESC_ID_ASC).map(m -> new MachineRank(this.ranking(m.winlose()), m)).collect(toList());
-		}
-
-		public int ranking(Integer newWinlose) {
-			int compareTo = winlose.compareTo(newWinlose);
-			if (compareTo == 0) {
-				numberOfSameRank++;
-			} else {
-				rank += compareTo + numberOfSameRank;
-				numberOfSameRank = 0;
-			}
-			winlose = newWinlose;
-			return rank;
+			return machines.stream().sorted(Machine.WINLOSE_DESC_ID_ASC).collect(groupingBy(Machine::winlose, LinkedHashMap::new, toList())).entrySet().stream().map(keyVaule -> {
+				nextRank += numberOfSameRank;
+				numberOfSameRank = keyVaule.getValue().size();
+				return keyVaule.getValue().stream().map(m -> {
+					return new MachineRank(nextRank, m);
+				}).collect(toList());
+			}).flatMap(List::stream).collect(toList());
 		}
 	}
 

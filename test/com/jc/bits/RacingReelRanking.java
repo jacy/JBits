@@ -31,20 +31,19 @@ public class RacingReelRanking {
 		private int numberOfSameRank = 0;
 
 		public List<MachineRank> ranking(List<Machine> machines) {
-			return machines.stream().sorted(Machine.WINLOSE_DESC_ID_ASC).map(m -> new MachineRank(this.ranking(m), m)).collect(toList());
+			return machines.stream().sorted(Machine.WINLOSE_DESC_ID_ASC).map(m -> new MachineRank(this.ranking(m.winlose()), m)).collect(toList());
 		}
 
-		public int ranking(Machine machine) {
-			int compareTo = this.winlose.compareTo(machine.winlose());
-			this.rank += compareTo;
+		public int ranking(Integer newWinlose) {
+			int compareTo = winlose.compareTo(newWinlose);
 			if (compareTo == 0) {
-				this.numberOfSameRank++;
+				numberOfSameRank++;
 			} else {
-				this.rank += this.numberOfSameRank;
-				this.numberOfSameRank = 0;
+				rank += compareTo + numberOfSameRank;
+				numberOfSameRank = 0;
 			}
-			this.winlose = machine.winlose();
-			return this.rank;
+			winlose = newWinlose;
+			return rank;
 		}
 	}
 
